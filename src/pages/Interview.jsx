@@ -27,7 +27,7 @@ export default function Interview() {
   // Fetch a new question when page loads
   useEffect(() => {
     fetchQuestion();
-  }, [type]);
+  }, [type, fetchQuestion]);
 
   const fetchQuestion = async () => {
     setQuestionLoading(true);
