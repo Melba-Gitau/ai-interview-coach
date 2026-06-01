@@ -8,7 +8,7 @@ export default function Interview() {
   const { type } = useParams();
   const [answer, setAnswer] = useState("");
   const [feedback, setFeedback] = useState("");
-  const [question, setQuestion] = useState("");
+  const [question, setQuestion] = useState("Loading your question...");
   const [loading, setLoading] = useState(false);
 
   const feedbackCriteria = {
@@ -23,29 +23,24 @@ export default function Interview() {
   };
 
   // Fetch a new question when page loads
+  const fetchQuestion = useCallback(async () => {
+    try {
+      const res = await fetch('/api/question', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type }),
+      });
+      const data = await res.json();
+      setQuestion(data.question);
+    } catch (error) {
+      console.error('Error fetching question:', error);
+      setQuestion('Could not load question. Please try again.');
+    }
+  }, [type]);
+
   useEffect(() => {
     fetchQuestion();
-  }, [type, fetchQuestion]);
-
-// Fetch a new question when page loads
-const fetchQuestion = useCallback(async () => {
-  try {
-    const res = await fetch('/api/question', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type }),
-    });
-    const data = await res.json();
-    setQuestion(data.question);
-  } catch (error) {
-    console.error('Error fetching question:', error);
-    setQuestion('Could not load question. Please try again.');
-  }
-}, [type]);
-
-useEffect(() => {
-  fetchQuestion();
-}, [fetchQuestion]);
+  }, [fetchQuestion]);
 
   const handleSubmit = async () => {
     if (!answer.trim()) {
@@ -105,26 +100,9 @@ useEffect(() => {
               <p className="text-xs font-semibold text-muted-foreground mb-3">
                 QUESTION 1
               </p>
-              {questionLoading ? (
-                <p className="text-xl font-bold text-muted-foreground">
-                  Loading your question...
-                </p>
-              ) : questionError ? (
-                <div>
-                  <p className="text-sm text-red-600 mb-3">{questionError}</p>
-                  <button
-                    type="button"
-                    onClick={fetchQuestion}
-                    className="px-4 py-2 rounded-full border border-border bg-white hover:bg-gray-50 text-xs font-semibold"
-                  >
-                    Try again
-                  </button>
-                </div>
-              ) : (
-                <h2 className="text-xl font-bold text-foreground">
-                  {question}
-                </h2>
-              )}
+              <h2 className="text-xl font-bold text-foreground">
+                {question}
+              </h2>
             </div>
 
             {/* Answer Section */}
