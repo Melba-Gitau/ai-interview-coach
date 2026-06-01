@@ -9,8 +9,6 @@ export default function Interview() {
   const [answer, setAnswer] = useState("");
   const [feedback, setFeedback] = useState("");
   const [question, setQuestion] = useState("");
-  const [questionLoading, setQuestionLoading] = useState(true);
-  const [questionError, setQuestionError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const feedbackCriteria = {
