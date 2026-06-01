@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Navbar } from "../components/Navbar";
 import { Footer } from "../components/Footer";
@@ -24,39 +24,36 @@ export default function Interview() {
     ],
   };
 
+  const fetchQuestion = useCallback(async () => {
+    setQuestionLoading(true);
+    setQuestionError("");
+    setQuestion("");
+    try {
+      const res = await fetch("/api/question", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to load question");
+      }
+      setQuestion(data.question);
+    } catch (error) {
+      console.error("Error fetching question:", error);
+      setQuestionError(
+        error.message ||
+          "Could not load question. Is the API server running on port 5000?",
+      );
+    } finally {
+      setQuestionLoading(false);
+    }
+  }, [type]);
+
   // Fetch a new question when page loads
   useEffect(() => {
-    const fetchQuestion = async () => {
-      setQuestionLoading(true);
-      setQuestionError("");
-      setQuestion("");
-  
-      try {
-        const res = await fetch("/api/question", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ type }),
-        });
-  
-        const data = await res.json();
-  
-        if (!res.ok) {
-          throw new Error(data.error || "Failed to load question");
-        }
-  
-        setQuestion(data.question);
-      } catch (error) {
-        console.error("Error fetching question:", error);
-        setQuestionError(
-          error.message || "Could not load question."
-        );
-      } finally {
-        setQuestionLoading(false);
-      }
-    };
-  
     fetchQuestion();
-  }, [type]);
+  }, [fetchQuestion]);
 
   const handleSubmit = async () => {
     if (!answer.trim()) {
