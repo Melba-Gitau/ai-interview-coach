@@ -10,11 +10,11 @@ app.use(cors());
 app.use(express.json());
 
 if (!process.env.GOOGLE_API_KEY) {
-  console.warn("Missing GOOGLE_API_KEY - API calls will fail");
+  console.error("Missing GOOGLE_API_KEY in .env");
+  process.exit(1);
 }
 
-const apiKey = process.env.GOOGLE_API_KEY?.trim();
-const genAI = new GoogleGenerativeAI(apiKey);
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY.trim());
 const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
 // Health check
@@ -80,7 +80,6 @@ Format: Bullet points, max 4-5 sentences total.
 });
 
 const PORT = process.env.PORT || 5000;
-
-app.listen(PORT, "0.0.0.0", () => {
+app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
