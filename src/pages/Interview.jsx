@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from "react-router-dom";
 import { Navbar } from "../components/Navbar";
 import { Footer } from "../components/Footer";
@@ -29,31 +29,25 @@ export default function Interview() {
     fetchQuestion();
   }, [type, fetchQuestion]);
 
-  const fetchQuestion = async () => {
-    setQuestionLoading(true);
-    setQuestionError("");
-    setQuestion("");
-    try {
-      const res = await fetch("/api/question", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to load question");
-      }
-      setQuestion(data.question);
-    } catch (error) {
-      console.error("Error fetching question:", error);
-      setQuestionError(
-        error.message ||
-          "Could not load question. Is the API server running on port 5000?",
-      );
-    } finally {
-      setQuestionLoading(false);
-    }
-  };
+// Fetch a new question when page loads
+const fetchQuestion = useCallback(async () => {
+  try {
+    const res = await fetch('/api/question', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type }),
+    });
+    const data = await res.json();
+    setQuestion(data.question);
+  } catch (error) {
+    console.error('Error fetching question:', error);
+    setQuestion('Could not load question. Please try again.');
+  }
+}, [type]);
+
+useEffect(() => {
+  fetchQuestion();
+}, [fetchQuestion]);
 
   const handleSubmit = async () => {
     if (!answer.trim()) {
