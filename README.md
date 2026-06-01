@@ -1,70 +1,88 @@
-# Getting Started with Create React App
+# ThinkHire AI — The AI Interview Coach
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Practice how you **think**, not just how you code.
 
-## Available Scripts
+![ThinkHire AI](https://img.shields.io/badge/version-1.0.0-blue)
+![React](https://img.shields.io/badge/React-18-blue)
+![Node.js](https://img.shields.io/badge/Node.js-18+-green)
+![Gemini API](https://img.shields.io/badge/Gemini%20API-v1-orange)
+![License](https://img.shields.io/badge/license-MIT-green)
 
-In the project directory, you can run:
+**🌐 Live Demo:** [https://your-vercel-url.vercel.app](https://your-vercel-url.vercel.app)
 
-### `npm start`
+---
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## 🎯 What is ThinkHire AI?
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+An AI-powered interview coach that helps developers practice articulating their technical reasoning, behavioral storytelling, and problem-solving process.
 
-### `npm test`
+**The Problem:** Many developers don't fail interviews because they can't code — they struggle because they can't *clearly explain* how they think.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+**The Solution:** ThinkHire AI gives you instant AI feedback on clarity, structure, reasoning, and communication.
 
-### `npm run build`
+---
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## ✨ Features
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+- 🤖 **AI Mock Interviews** — Realistic technical, behavioral, and system design rounds powered by Google Gemini
+- 💭 **Dynamic Questions** — AI-generated questions for unlimited practice
+- 📊 **Real-time Feedback** — Get scored on clarity, structure, reasoning, and communication
+- 🎯 **Multiple Interview Types** — Technical, Behavioral, System Design
+- ⚡ **Fast & Free** — Built with React, Express, and Google's Gemini API
+- 🎨 **Beautiful UI** — Modern design with Space Grotesk + Inter fonts
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+---
 
-### `npm run eject`
+## 🛠️ Tech Stack
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+**Frontend:**
+- React 18
+- React Router v6
+- Tailwind CSS
+- Lucide Icons
+- Space Grotesk + Inter fonts
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+**Backend:**
+- Node.js + Express
+- Google Generative AI (Gemini 2.0 Flash)
+- CORS enabled
+- node-fetch for API calls
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+**Deployment:**
+- Frontend: Vercel
+- Backend: Railway
+- Environment: Node.js 18+
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+---
 
-## Learn More
+## 🚀 Quick Start
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### Try the Live App (Easiest) ⭐
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+👉 **[Open ThinkHire AI](https://your-vercel-url.vercel.app)**
 
-### Code Splitting
+Just click and start practicing! No signup required.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+---
 
-### Analyzing the Bundle Size
+### Run Locally (For Developers)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+**Prerequisites:**
+- Node.js 18+
+- npm or yarn
+- Google API Key (free from [ai.google.dev](https://ai.google.dev))
 
-### Making a Progressive Web App
+**Setup:**
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+1. **Clone the repository**
+```bash
+   git clone https://github.com/melba-magiri/ai-interview-coach.git
+   cd ai-interview-coach
+```
 
-### Advanced Configuration
+2. **Install dependencies**
+```bash
+   npm install
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+3. **Create `.env` file in project root**
