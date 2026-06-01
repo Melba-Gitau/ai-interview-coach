@@ -80,7 +80,7 @@ export default function InterviewType() {
         </div>
 
         {/* Story Builder CTA */}
-        <p className="text-xs text-muted-foreground">
+        {/* <p className="text-xs text-muted-foreground">
           Prefer to structure your own story first?{" "}
           <Link
             to="/story-builder"
@@ -88,7 +88,7 @@ export default function InterviewType() {
           >
             Open the Story Builder →
           </Link>
-        </p>
+        </p> */}
       </main>
 
       <Footer />
