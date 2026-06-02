@@ -8,7 +8,9 @@ export default function Interview() {
   const { type } = useParams();
   const [answer, setAnswer] = useState("");
   const [feedback, setFeedback] = useState("");
-  const [question, setQuestion] = useState("");
+  const questionFromUrl = searchParams.get('q');
+
+  const [question, setQuestion] = useState(questionFromUrl || "Loading your question...");
   const [questionLoading, setQuestionLoading] = useState(true);
   const [questionError, setQuestionError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -29,11 +31,14 @@ export default function Interview() {
     setQuestionError("");
     setQuestion("");
     try {
-      const res = await fetch("https://ai-interview-coach-production-7ac4.up.railway.app/api/question", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type }),
-      });
+      const res = await fetch(
+        "https://ai-interview-coach-production-7ac4.up.railway.app/api/question",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type }),
+        },
+      );
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data.error || "Failed to load question");
@@ -63,11 +68,14 @@ export default function Interview() {
 
     setLoading(true);
     try {
-      const res = await fetch("https://ai-interview-coach-production-7ac4.up.railway.app/api/feedback", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question, answer, type }),
-      });
+      const res = await fetch(
+        "https://ai-interview-coach-production-7ac4.up.railway.app/api/feedback",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question, answer, type }),
+        },
+      );
       const data = await res.json();
       setFeedback(data.feedback);
     } catch (error) {
