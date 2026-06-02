@@ -95,7 +95,7 @@ Format your response in clear bullet points. Maximum 4-5 sentences total.
 app.use(express.static(path.join(__dirname, "build")));
 
 // Catch-all route for React Router (must be last)
-app.get("*", (req, res) => {
+app.get("/*", (req, res) => {
   res.sendFile(path.join(__dirname, "build", "index.html"));
 });
 
