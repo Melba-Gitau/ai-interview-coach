@@ -8,9 +8,7 @@ export default function Interview() {
   const { type } = useParams();
   const [answer, setAnswer] = useState("");
   const [feedback, setFeedback] = useState("");
-  const questionFromUrl = searchParams.get('q');
-
-  const [question, setQuestion] = useState(questionFromUrl || "Loading your question...");
+  const [question, setQuestion] = useState("");
   const [questionLoading, setQuestionLoading] = useState(true);
   const [questionError, setQuestionError] = useState("");
   const [loading, setLoading] = useState(false);

@@ -19,7 +19,7 @@ export default function StackSelector() {
       title: "Start Mock Interview",
       desc: "Technical, behavioral, or system design. One question, then feedback.",
       featured: true,
-      link: "/interview/technical",
+      link: "/interview/technical", 
     },
     {
       id: "behavioral",
@@ -28,7 +28,7 @@ export default function StackSelector() {
       title: "Behavioral Practice",
       desc: "Sharpen STAR answers for the questions that always come up.",
       featured: false,
-      link: "/interview/chat/behavioral",
+      link: "/interview/chat/behavioral", 
     },
     {
       id: "technical",
@@ -37,7 +37,7 @@ export default function StackSelector() {
       title: "Technical Thought Practice",
       desc: "Think out loud — get scored on clarity, structure, and reasoning.",
       featured: false,
-      link: "/interview/chat/technical",
+      link: "/interview/chat/technical", 
     },
     {
       id: "saved",
@@ -154,30 +154,20 @@ export default function StackSelector() {
         </div>
 
         {/* Quick Start Section */}
-
         <div>
           <h2 className="text-lg font-semibold text-foreground mb-4">
             Quick start
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <Link
-              to="/interview/chat/behavioral?q=Tell%20me%20about%20a%20time%20you%20overcame%20a%20technical%20challenge"
-              className="p-4 border border-border rounded-xl bg-card hover:shadow-elegant transition text-foreground text-center text-sm"
-            >
-              Tell me about a time you overcame a technical challenge
-            </Link>
-            <Link
-              to="/interview/chat/technical?q=Design%20a%20notification%20system%20for%20millions%20of%20users"
-              className="p-4 border border-border rounded-xl bg-card hover:shadow-elegant transition text-foreground text-center text-sm"
-            >
-              Design a notification system
-            </Link>
-            <Link
-              to="/interview/chat/system-design?q=How%20would%20you%20scale%20a%20real-time%20chat%20application"
-              className="p-4 border border-border rounded-xl bg-card hover:shadow-elegant transition text-foreground text-center text-sm"
-            >
-              How would you scale a real-time chat app
-            </Link>
+            {quickStart.map((question, i) => (
+              <Link
+                key={i}
+                to={`/interview/chat/technical`}
+                className="p-4 border border-border rounded-xl bg-card hover:shadow-elegant transition text-foreground text-center text-sm"
+              >
+                {question}
+              </Link>
+            ))}
           </div>
         </div>
       </main>
