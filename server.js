@@ -8,36 +8,28 @@ dotenv.config();
 
 const app = express();
 
-const PORT = process.env.PORT || 8080;
-
-// === CORS Configuration (Very Important for Railway) ===
-app.use(cors({
-  origin: "*",           // Allow all for now (change later)
-  methods: ["GET", "POST"],
-  allowedHeaders: ["Content-Type"]
-}));
-
+// Vercel + CORS
+app.set('trust proxy', 1);
+app.use(cors({ origin: "*" }));
 app.use(express.json());
 
-// Initialize AI
+const PORT = process.env.PORT || 8080;
+
+// Initialize Gemini
 if (!process.env.GOOGLE_API_KEY) {
-  console.error("❌ GOOGLE_API_KEY is missing in Variables!");
+  console.error("❌ GOOGLE_API_KEY missing");
 } else {
-  console.log("✅ GOOGLE_API_KEY is loaded");
+  console.log("✅ GOOGLE_API_KEY loaded");
 }
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY?.trim());
 const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-// ======================
-// API ROUTES - MUST BE BEFORE static files
-// ======================
-
+// API Routes
 app.get("/api/health", (req, res) => res.json({ status: "ok" }));
 
 app.post("/api/question", async (req, res) => {
   const { type } = req.body;
-
   const prompts = {
     technical: "Generate a single realistic technical interview question about system design or coding. Make it specific and challenging. Just the question, nothing else.",
     behavioral: "Generate a single behavioral interview question using the STAR format. Just the question, nothing else.",
@@ -57,33 +49,21 @@ app.post("/api/question", async (req, res) => {
 app.post("/api/feedback", async (req, res) => {
   const { question, answer, type = "technical" } = req.body;
 
-  const feedbackPrompt = `
-You are an expert interview coach. Evaluate this ${type} interview answer.
-
-Question: ${question}
-Answer: ${answer}
-
-Give concise feedback on clarity, structure, depth, and communication. Use bullet points.
-`;
+  const feedbackPrompt = `You are an expert interview coach. Evaluate this ${type} answer. Question: ${question} Answer: ${answer}. Give short bullet point feedback.`;
 
   try {
     const result = await model.generateContent(feedbackPrompt);
     res.json({ feedback: result.response.text() });
   } catch (error) {
-    console.error("Feedback error:", error.message);
     res.status(500).json({ error: "Failed to generate feedback" });
   }
 });
 
-// ======================
-// Serve React App
-// ======================
+// Serve React app
 app.use(express.static(path.join(__dirname, "build")));
 
 app.get("/{*splat}", (req, res) => {
   res.sendFile(path.join(__dirname, "build", "index.html"));
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-});
+module.exports = app;   // Important for Vercel
