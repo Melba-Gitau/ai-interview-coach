@@ -29,7 +29,7 @@ export default function Interview() {
     setQuestionError("");
     setQuestion("");
     try {
-      const res = await fetch("https://ai-interview-coach-production-9806.up.railway.app/api/question", {
+      const res = await fetch("/api/question", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ type }),
@@ -63,7 +63,7 @@ export default function Interview() {
 
     setLoading(true);
     try {
-      const res = await fetch("https://ai-interview-coach-production-9806.up.railway.app/api/feedback", {
+      const res = await fetch("/api/feedback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question, answer, type }),
