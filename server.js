@@ -1,28 +1,35 @@
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 const dotenv = require("dotenv");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 dotenv.config();
 
 const app = express();
+
+// Middleware
 app.use(cors());
 app.use(express.json());
 
+// Initialize Gemini AI
 if (!process.env.GOOGLE_API_KEY) {
-  console.warn("Missing GOOGLE_API_KEY - API calls will fail");
+  console.warn("⚠️ Missing GOOGLE_API_KEY environment variable");
 }
 
-const apiKey = process.env.GOOGLE_API_KEY?.trim();
-const genAI = new GoogleGenerativeAI(apiKey);
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY?.trim());
 const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+// ======================
+// API Routes
+// ======================
 
 // Health check
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
-// Generate interview question based on type
+// Generate interview question
 app.post("/api/question", async (req, res) => {
   const { type } = req.body;
 
@@ -39,11 +46,12 @@ app.post("/api/question", async (req, res) => {
     const prompt = prompts[type] || prompts.technical;
     const result = await model.generateContent(prompt);
     const question = result.response.text();
+
     res.json({ question });
   } catch (error) {
-    console.error("Question error:", error.message || error);
+    console.error("Question generation error:", error.message);
     const message = error.message?.includes("429")
-      ? "Gemini API quota exceeded. Wait a minute or try another model in server.js."
+      ? "Rate limit exceeded. Please try again in a moment."
       : "Failed to generate question";
     res.status(500).json({ error: message });
   }
@@ -63,10 +71,10 @@ Answer: ${answer}
 Provide concise, actionable feedback on:
 1. Clarity - How clear was the explanation?
 2. Structure - Was the answer well-organized?
-3. ${type === "behavioral" ? "Specific Example" : "Technical Depth"} - Was it detailed enough?
+3. ${type === "behavioral" ? "Specific Examples" : "Technical Depth"} - Was it detailed enough?
 4. Communication - How well did they articulate their thinking?
 
-Format: Bullet points, max 4-5 sentences total.
+Format your response in clear bullet points. Maximum 4-5 sentences total.
 `;
 
   try {
@@ -74,13 +82,25 @@ Format: Bullet points, max 4-5 sentences total.
     const feedback = result.response.text();
     res.json({ feedback });
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Feedback generation error:", error.message);
     res.status(500).json({ error: "Failed to generate feedback" });
   }
 });
 
-const PORT = process.env.PORT || 5000;
+// ======================
+// Serve React App (Production)
+// ======================
 
-app.listen(PORT,() => {
-  console.log(`Server running on ${PORT}`);
+// Serve static files from the React build
+app.use(express.static(path.join(__dirname, "build")));
+
+// Catch-all route for React Router (must be last)
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "build", "index.html"));
+});
+
+const PORT = process.env.PORT || 8080;
+
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
 });
