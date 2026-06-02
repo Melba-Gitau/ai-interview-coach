@@ -10,33 +10,34 @@ const app = express();
 
 const PORT = process.env.PORT || 8080;
 
-// Better CORS for production
+// === CORS Configuration (Very Important for Railway) ===
 app.use(cors({
-  origin: "*",                    // Change to your domain later for security
+  origin: "*",           // Allow all for now (change later)
   methods: ["GET", "POST"],
   allowedHeaders: ["Content-Type"]
 }));
 
 app.use(express.json());
 
-// Initialize Gemini
+// Initialize AI
 if (!process.env.GOOGLE_API_KEY) {
-  console.error("❌ GOOGLE_API_KEY is missing!");
+  console.error("❌ GOOGLE_API_KEY is missing in Variables!");
 } else {
-  console.log("✅ GOOGLE_API_KEY loaded");
+  console.log("✅ GOOGLE_API_KEY is loaded");
 }
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY?.trim());
 const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
 // ======================
-// API ROUTES - Must be BEFORE static & catch-all
+// API ROUTES - MUST BE BEFORE static files
 // ======================
 
 app.get("/api/health", (req, res) => res.json({ status: "ok" }));
 
 app.post("/api/question", async (req, res) => {
   const { type } = req.body;
+
   const prompts = {
     technical: "Generate a single realistic technical interview question about system design or coding. Make it specific and challenging. Just the question, nothing else.",
     behavioral: "Generate a single behavioral interview question using the STAR format. Just the question, nothing else.",
@@ -62,10 +63,7 @@ You are an expert interview coach. Evaluate this ${type} interview answer.
 Question: ${question}
 Answer: ${answer}
 
-Provide concise, actionable feedback on:
-1. Clarity 2. Structure 3. ${type === "behavioral" ? "Examples" : "Technical Depth"} 4. Communication
-
-Use bullet points. Keep short.
+Give concise feedback on clarity, structure, depth, and communication. Use bullet points.
 `;
 
   try {
@@ -78,7 +76,7 @@ Use bullet points. Keep short.
 });
 
 // ======================
-// Serve React Build
+// Serve React App
 // ======================
 app.use(express.static(path.join(__dirname, "build")));
 
