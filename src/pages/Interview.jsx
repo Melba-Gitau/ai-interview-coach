@@ -76,6 +76,27 @@ export default function Interview() {
       );
       const data = await res.json();
       setFeedback(data.feedback);
+
+      const newResponse = {
+        id: Date.now(),
+        type: type,
+        date: 'today',
+        question: question,
+        answer: answer,
+        feedback: data.feedback,
+        score: data.score || 75, // Use score from backend
+      };
+  
+      // Get existing sessions
+      const existing = localStorage.getItem('interviewSessions');
+      const sessions = existing ? JSON.parse(existing) : [];
+  
+      // Add new response
+      sessions.push(newResponse);
+  
+      // Save back to localStorage
+      localStorage.setItem('interviewSessions', JSON.stringify(sessions));
+
     } catch (error) {
       console.error("Error:", error);
       alert("Error: " + error.message);

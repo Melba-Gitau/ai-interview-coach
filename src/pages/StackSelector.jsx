@@ -46,7 +46,7 @@ export default function StackSelector() {
       title: "My Responses",
       desc: "Revisit past sessions, compare drafts, and track your improvement.",
       featured: false,
-      link: "#", // Coming soon
+      link: "/responses",
     },
   ];
 
@@ -154,7 +154,7 @@ export default function StackSelector() {
         </div>
 
         {/* Quick Start Section */}
-        <div>
+        {/* <div>
           <h2 className="text-lg font-semibold text-foreground mb-4">
             Quick start
           </h2>
@@ -169,7 +169,7 @@ export default function StackSelector() {
               </Link>
             ))}
           </div>
-        </div>
+        </div> */}
       </main>
 
       <Footer />

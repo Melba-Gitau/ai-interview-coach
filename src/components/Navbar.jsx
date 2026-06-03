@@ -31,14 +31,11 @@ export function Navbar() {
             to="/select-stack"
             className="text-muted-foreground hover:text-foreground transition"
           >
-            Interview
+            Dashboard
           </Link>
-          <a
-            href="#features"
-            className="text-muted-foreground hover:text-foreground transition"
-          >
-            Features
-          </a>
+          <Link to="/responses" className="hover:text-primary transition">
+           My Responses
+          </Link>
         </nav>
 
         {/* CTA Button */}

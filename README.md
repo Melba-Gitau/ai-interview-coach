@@ -8,7 +8,7 @@ Practice how you **think**, not just how you code.
 ![Gemini API](https://img.shields.io/badge/Gemini%20API-v1-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-**🌐 Live Demo:** [https://your-vercel-url.vercel.app](https://your-vercel-url.vercel.app)
+**🌐 Live Demo:** [https://thinkhire-ai.vercel.app]
 
 ---
 
@@ -59,7 +59,7 @@ An AI-powered interview coach that helps developers practice articulating their 
 
 ### Try the Live App (Easiest) ⭐
 
-👉 **[Open ThinkHire AI](https://your-vercel-url.vercel.app)**
+👉 **[Open ThinkHire AI](https://thinkhire-ai.vercel.app)**
 
 Just click and start practicing! No signup required.
 
