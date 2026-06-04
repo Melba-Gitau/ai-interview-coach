@@ -23,7 +23,7 @@ if (!process.env.GOOGLE_API_KEY) {
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY?.trim());
 const model = genAI.getGenerativeModel({ 
-  model: "gemini-1.5-flash"     // Stable and good model
+  model: "gemini-2.5-flash"
 });
 
 // ======================
