@@ -97,9 +97,28 @@ app.post("/api/question", async (req, res) => {
   const { type } = req.body;
 
   const prompts = {
-    technical: `Generate ONE challenging technical coding interview question...`,
-    behavioral: `Generate ONE strong behavioral interview question...`,
-    "system-design": `Generate ONE realistic system design interview question...`
+    technical: `Generate ONE challenging technical coding interview question suitable for mid-to-senior level engineers.
+
+Focus on: algorithms, data structures, system optimization, JavaScript concepts, or problem-solving patterns.
+Make it realistic for a real company interview (e.g. FAANG-level or strong startup).
+
+Return ONLY the question. No explanation, no hints, no solution, no extra text.`,
+
+    behavioral: `Generate ONE strong behavioral interview question for a mid-to-senior software engineer.
+
+The question should encourage the candidate to share real experiences using the STAR method (Situation, Task, Action, Result).
+
+Focus on: leadership, conflict resolution, failure, teamwork, handling pressure, mentoring, or difficult decisions.
+
+Return ONLY the question.`,
+
+    "system-design": `Generate ONE realistic system design interview question for mid-to-senior level engineers.
+
+Examples: Design Instagram, TikTok, Uber, WhatsApp, Dropbox, a Rate Limiter, Notification System, etc.
+
+Focus on scalability, trade-offs, high availability, databases, caching, APIs, and load balancing.
+
+Return ONLY the question, nothing else.`
   };
 
   try {
