@@ -3,11 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "start": "react-scripts start",
     "build": "react-scripts build",
+    "start": "node server.js",
     "server": "node server.js",
-    "dev": "concurrently \"npm run server\" \"npm start\"",
-    "postinstall": "npm run build"
+    "dev": "concurrently \"npm run server\" \"npm start\""
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.99.0",

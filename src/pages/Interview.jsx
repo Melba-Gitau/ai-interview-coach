@@ -30,7 +30,7 @@ export default function Interview() {
     setQuestion("");
     try {
       const res = await fetch(
-        "https://ai-interview-coach-production-7ac4.up.railway.app/api/question",
+        "https://ai-interview-coach-production-7ac4.up.railway.app/api/question", 
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -38,20 +38,51 @@ export default function Interview() {
         },
       );
       const data = await res.json();
+      
       if (!res.ok) {
+        if (res.status === 429) {
+          throw new Error("Daily limit reached (20 requests/day). Please try again tomorrow!");
+        }
         throw new Error(data.error || "Failed to load question");
       }
+      
       setQuestion(data.question);
     } catch (error) {
       console.error("Error fetching question:", error);
-      setQuestionError(
-        error.message ||
-          "Could not load question. Is the API server running on port 5000?",
-      );
+      setQuestionError(error.message || "Could not load question. Please try again.");
     } finally {
       setQuestionLoading(false);
     }
   }, [type]);
+
+  // const fetchQuestion = useCallback(async () => {
+  //   setQuestionLoading(true);
+  //   setQuestionError("");
+  //   setQuestion("");
+  //   try {
+  //     const res = await fetch(
+  //       "https://ai-interview-coach-production-7ac4.up.railway.app/api/question",
+  //       {
+  //         method: "POST",
+  //         headers: { "Content-Type": "application/json" },
+  //         body: JSON.stringify({ type }),
+  //       },
+  //     );
+  //     const data = await res.json();
+  //     if (!res.ok) {
+  //       throw new Error(data.error || "Failed to load question");
+  //     }
+  //     setQuestion(data.question);
+  //   } catch (error) {
+  //     console.error("Error fetching question:", error);
+  //     setQuestionError(
+  //       error.message ||
+  //         "Could not load question. Is the API server running on port 5000?",
+  //     );
+  //   } finally {
+  //     setQuestionLoading(false);
+  //   }
+  // }, [type]);
 
   // Fetch a new question when page loads
   useEffect(() => {
