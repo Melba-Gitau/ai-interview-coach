@@ -97,28 +97,34 @@ app.post("/api/question", async (req, res) => {
   const { type } = req.body;
 
   const prompts = {
-    technical: `Generate ONE challenging technical coding interview question suitable for mid-to-senior level engineers.
+    technical: `Generate ONE technical coding interview question suitable for a beginner to intermediate level engineer.
 
-Focus on: algorithms, data structures, system optimization, JavaScript concepts, or problem-solving patterns.
-Make it realistic for a real company interview (e.g. FAANG-level or strong startup).
-
-Return ONLY the question. No explanation, no hints, no solution, no extra text.`,
-
-    behavioral: `Generate ONE strong behavioral interview question for a mid-to-senior software engineer.
-
-The question should encourage the candidate to share real experiences using the STAR method (Situation, Task, Action, Result).
-
-Focus on: leadership, conflict resolution, failure, teamwork, handling pressure, mentoring, or difficult decisions.
-
-Return ONLY the question.`,
-
-    "system-design": `Generate ONE realistic system design interview question for mid-to-senior level engineers.
-
-Examples: Design Instagram, TikTok, Uber, WhatsApp, Dropbox, a Rate Limiter, Notification System, etc.
-
-Focus on scalability, trade-offs, high availability, databases, caching, APIs, and load balancing.
-
-Return ONLY the question, nothing else.`
+    Focus on: basic algorithms, fundamental data structures, JavaScript concepts, problem-solving patterns.
+    Make it realistic but approachable for someone learning to code interview skills.
+    
+    Examples: reverse a string, find duplicates in array, simple sorting, basic recursion, etc.
+    
+    Return ONLY the question. No explanation, no hints, no solution.`,
+    
+    behavioral: `Generate ONE behavioral interview question suitable for a beginner software engineer or early-career professional.
+    
+    The question should encourage sharing real (or realistic) experiences using the STAR method (Situation, Task, Action, Result).
+    
+    Focus on: learning from mistakes, teamwork, handling feedback, taking initiative, problem-solving, or adapting to new situations.
+    
+    Make it approachable for someone early in their career.
+    
+    Return ONLY the question.`,
+    
+    "system-design": `Generate ONE beginner-friendly system design question for junior engineers learning system design concepts.
+    
+    Examples: Design a simple URL shortener, basic todo app, simple chat system, basic social media feed, etc.
+    
+    Focus on: breaking down the problem, basic scalability thinking, simple database design, basic caching concepts.
+    
+    Keep it approachable - not FAANG level complexity.
+    
+    Return ONLY the question.`
   };
 
   try {

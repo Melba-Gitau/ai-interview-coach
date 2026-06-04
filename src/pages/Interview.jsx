@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Navbar } from "../components/Navbar";
 import { Footer } from "../components/Footer";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw, Sparkles, Save } from "lucide-react";
 
 export default function Interview() {
   const { type } = useParams();
@@ -141,7 +141,7 @@ export default function Interview() {
     <div className="min-h-screen bg-gradient-page">
       <Navbar />
 
-      <main className="mx-auto max-w-6xl px-12 py-12">
+      <main className="mx-auto max-w-6xl px-6 md:px-12 py-8 md:py-12">
         {/* Header */}
         <div className="flex justify-between items-start mb-8">
           <div>
@@ -172,7 +172,7 @@ export default function Interview() {
                 QUESTION 1
               </p>
               {questionLoading ? (
-                <p className="text-xl font-bold text-muted-foreground">
+                <p className="text-lg md:text-xl font-display font-bold text-muted-foreground">
                   Loading your question...
                 </p>
               ) : questionError ? (
@@ -187,9 +187,9 @@ export default function Interview() {
                   </button>
                 </div>
               ) : (
-                <h2 className="text-xl font-bold text-foreground">
-                  {question}
-                </h2>
+                <h2 className="text-lg md:text-xl font-display font-bold text-foreground">
+                {question}
+              </h2>
               )}
             </div>
 
@@ -211,12 +211,16 @@ export default function Interview() {
                   {wordCount} words
                 </p>
                 <div className="flex gap-2">
-                  <button
-                    onClick={() => setAnswer("")}
-                    className="px-4 py-2 rounded-full border border-border bg-white hover:bg-gray-50 text-xs font-semibold transition"
-                  >
-                    Skip
-                  </button>
+                <button
+                   onClick={() => {
+                       setAnswer("");
+                       setFeedback("");
+                       fetchQuestion();
+                  }}
+                  className="px-4 py-2 rounded-full border border-border bg-white hover:bg-gray-50 text-xs font-semibold transition"
+                  >     
+                   Skip
+                </button>
                   <button
                     onClick={handleSubmit}
                     disabled={loading || !answer.trim()}
@@ -230,43 +234,100 @@ export default function Interview() {
           </div>
 
           {/* Right Column - Feedback */}
-          <div className="rounded-xl border border-border bg-card p-6">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-green-500 text-sm">✨</span>
-              <p className="text-xs font-semibold text-foreground">
-                AI FEEDBACK
-              </p>
-            </div>
+         {/* Right Column - Feedback */}
+{/* Right Column - Feedback */}
+<div className={`rounded-xl border p-6 ${feedback ? 'border-blue-200' : 'border-border bg-card'}`} style={feedback ? {background: 'linear-gradient(135deg,rgb(247, 247, 247) 0%,rgb(106, 156, 199) 100%)'} : {}}>
+  <div className="flex items-center gap-2 mb-6">
+  <Sparkles className="w-3.5 h-3.5 text-accent " />
+    <p className="text-xs font-semibold text-foreground">
+      AI FEEDBACK
+    </p>
+  </div>
 
-            {feedback ? (
-              <div>
-                <p className="text-xs text-foreground whitespace-pre-wrap">
-                  {feedback}
-                </p>
-              </div>
-            ) : (
-              <div>
-                <p className="text-xs text-muted-foreground mb-3">
-                  Feedback will appear here.
-                </p>
-                <p className="text-xs text-muted-foreground mb-3">
-                  Submit your answer to get coaching across clarity, structure,
-                  reasoning, and delivery.
-                </p>
-                <ul className="space-y-1.5">
-                  {feedbackCriteria[type]?.map((criterion) => (
-                    <li
-                      key={criterion}
-                      className="flex items-center gap-2 text-xs text-muted-foreground"
-                    >
-                      <span className="w-1 h-1 rounded-full bg-green-500"></span>
-                      {criterion}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+  {feedback ? (
+    <div className="space-y-6">
+      {/* Overall Score */}
+      <div>
+        <p className="text-4xl font-bold text-foreground mb-1">{Math.round(Math.random() * 30 + 50)}</p>
+        <p className="text-sm text-muted-foreground">/ 100 overall</p>
+      </div>
+
+      {/* Criteria Breakdown */}
+      <div className="space-y-4">
+        {feedbackCriteria[type]?.map((criterion, idx) => (
+          <div key={criterion}>
+            <div className="flex justify-between items-center mb-2">
+              <p className="text-sm font-semibold text-foreground">{criterion}</p>
+              <p className="text-sm font-bold text-primary">{Math.round(Math.random() * 5 + 3)}/10</p>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className="bg-primary h-2 rounded-full" 
+                style={{width: `${(Math.round(Math.random() * 5 + 3) / 10) * 100}%`}}
+              ></div>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Quick tip for improvement
+            </p>
           </div>
+        ))}
+      </div>
+
+      {/* Try Next */}
+      <div className="bg-gray-50 border border-border rounded-lg p-4">
+        <p className="text-xs font-semibold text-foreground mb-2">TRY NEXT</p>
+        <p className="text-xs text-muted-foreground">
+          {feedback.substring(0, 100)}...
+        </p>
+      </div>
+
+      {/* Buttons */}
+      <div className="flex gap-3 pt-4">
+        <button
+          onClick={() => {
+            setAnswer("");
+            setFeedback("");
+            fetchQuestion();
+          }}
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-border hover:bg-gray-50 text-sm font-semibold transition"
+        >
+          <Save className="w-3.5 h-3.5" />Save session
+        </button>
+        <button
+          onClick={() => {
+            setAnswer("");
+            setFeedback("");
+            fetchQuestion();
+          }}
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-foreground hover:bg-gray-800 text-white text-sm font-semibold transition"
+        >
+          Next question →
+        </button>
+      </div>
+    </div>
+  ) : (
+    <div>
+      <p className="text-xs text-muted-foreground mb-3">
+        Feedback will appear here.
+      </p>
+      <p className="text-xs text-muted-foreground mb-3">
+        Submit your answer to get coaching across clarity, structure,
+        reasoning, and delivery.
+      </p>
+      <ul className="space-y-1.5">
+        {feedbackCriteria[type]?.map((criterion) => (
+          <li
+            key={criterion}
+            className="flex items-center gap-2 text-xs text-muted-foreground"
+          >
+            <span className="w-1 h-1 rounded-full bg-green-500"></span>
+            {criterion}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )}
+</div>
         </div>
       </main>
 

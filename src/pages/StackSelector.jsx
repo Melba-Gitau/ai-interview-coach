@@ -103,7 +103,7 @@ export default function StackSelector() {
                   <div className="flex-1">
                     {/* Label */}
                     <p
-                      className={`text-xs font-semibold tracking-wider mb-2 ${
+                      className={`text-xs font-semibold tracking-wider  text-right ${
                         option.featured ? "opacity-70" : "text-muted-foreground"
                       }`}
                     >
