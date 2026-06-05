@@ -46,9 +46,9 @@ let model = null;
 async function initializeModel() {
   // Try the best model first, then fallbacks
   const modelList = [
-    "gemini-3.5-flash",       // Primary (recommended)
-    "gemini-3.1-flash-lite",
-    "gemini-flash-latest"
+    'gemini-1.5-flash',      // ✅ Exists & works
+  'gemini-1.5-pro',        // ✅ Exists but slower
+  'gemini-pro' 
   ];
 
   for (const modelName of modelList) {
