@@ -8,13 +8,14 @@ dotenv.config();
 
 const app = express();
 
-app.use(cors({ origin: "*" }));
+// Middleware
+app.use(cors({ origin: "*" })); // Update to your domain in production
 app.use(express.json());
 
 const PORT = process.env.PORT || 8080;
 
 if (!process.env.GOOGLE_API_KEY) {
-  console.error("❌ GOOGLE_API_KEY is missing!");
+  console.error("❌ GOOGLE_API_KEY is missing in .env file!");
 } else {
   console.log("✅ GOOGLE_API_KEY loaded");
 }
@@ -22,20 +23,21 @@ if (!process.env.GOOGLE_API_KEY) {
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY?.trim());
 
 // ======================
-// Retry Helper
+// Retry Helper (handles 503 overload)
 // ======================
 async function withRetry(fn, maxRetries = 3) {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       return await fn();
     } catch (error) {
-      const isOverloaded = error.message?.includes("503") || 
-                          error.message?.includes("high demand");
+      const isOverload = error.message?.includes("503") || 
+                        error.message?.includes("high demand") ||
+                        error.message?.includes("overloaded");
 
-      if (isOverloaded && attempt < maxRetries) {
-        const delay = Math.pow(2, attempt) * 1000; // exponential backoff
-        console.warn(`⚠️ Model overloaded. Retrying in ${delay}ms... (Attempt ${attempt}/${maxRetries})`);
-        await new Promise(resolve => setTimeout(resolve, delay));
+      if (isOverload && attempt < maxRetries) {
+        const delay = attempt * 1500;
+        console.warn(`⚠️ Overloaded (attempt ${attempt}). Waiting ${delay}ms...`);
+        await new Promise(r => setTimeout(r, delay));
       } else {
         throw error;
       }
@@ -44,55 +46,91 @@ async function withRetry(fn, maxRetries = 3) {
 }
 
 // ======================
-// Model Setup with Multiple Fallbacks
+// Model Initialization (June 2026)
 // ======================
 let model = null;
 
 async function initializeModel() {
   const modelList = [
-    "gemini-2.5-flash",
-    "gemini-2.0-flash",
-    "gemini-1.5-pro",        // More stable, slightly slower
-    "gemini-flash-latest"
+    "gemini-3.5-flash",           // Best current model
+    "gemini-3.1-flash-lite",      // Fast & cheap fallback
+    "gemini-3-flash-preview",     // Preview version
+    "gemini-flash-latest"         // Dynamic latest alias
   ];
 
   for (const modelName of modelList) {
     try {
+      console.log(`Trying model: ${modelName}...`);
+      
       const tempModel = genAI.getGenerativeModel({
         model: modelName,
         generationConfig: {
           temperature: 0.7,
-          topP: 0.9,
+          topP: 0.95,
           maxOutputTokens: 2048,
-        }
+        },
       });
 
-      // Test call
-      await tempModel.generateContent("Test connection");
-      console.log(`🚀 Successfully using: ${modelName}`);
-      return tempModel;
+      // Quick connectivity test
+      const testResult = await tempModel.generateContent("Respond with only the word: OK");
+      if (testResult.response.text().trim()) {
+        console.log(`🚀 SUCCESS: Using ${modelName}`);
+        return tempModel;
+      }
     } catch (err) {
-      console.warn(`⚠️ ${modelName} unavailable → trying next`);
+      console.warn(`⚠️ ${modelName} failed: ${err.message?.substring(0, 120)}...`);
     }
   }
-  throw new Error("All Gemini models failed to initialize");
+
+  throw new Error("All models failed. Check API key / billing / region.");
 }
 
-// Initialize model
+// Initialize model on startup
 initializeModel()
-  .then(m => { model = m; })
-  .catch(err => console.error("❌ Model init failed:", err.message));
+  .then(m => {
+    model = m;
+    console.log("✅ Model is ready for requests!");
+  })
+  .catch(err => {
+    console.error("❌ CRITICAL:", err.message);
+    console.log("\n💡 FIX SUGGESTIONS:");
+    console.log("1. Create a NEW API key at https://aistudio.google.com/app/apikey");
+    console.log("2. Enable billing in Google Cloud Console");
+    console.log("3. Test your key directly in Google AI Studio");
+  });
 
 // ======================
 // Routes
 // ======================
 
 app.get("/api/health", (req, res) => {
-  res.json({ status: "ok", modelReady: !!model });
+  res.json({ 
+    status: "ok", 
+    modelReady: !!model,
+    timestamp: new Date().toISOString()
+  });
 });
 
+// Test model endpoint (very useful for debugging)
+app.get("/api/test-model", async (req, res) => {
+  if (!model) {
+    return res.status(503).json({ error: "Model not initialized yet" });
+  }
+  try {
+    const result = await model.generateContent("Say hello in one short sentence.");
+    res.json({ 
+      success: true, 
+      model: model.modelName || "unknown",
+      response: result.response.text().trim() 
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Generate Question
 app.post("/api/question", async (req, res) => {
-  if (!model) return res.status(503).json({ error: "AI model still initializing" });
+  if (!model) return res.status(503).json({ error: "Model still initializing. Try again shortly." });
 
   const { type } = req.body;
 
@@ -127,38 +165,48 @@ app.post("/api/question", async (req, res) => {
     Return ONLY the question.`
   };
 
+
   try {
     const prompt = prompts[type] || prompts.technical;
-
     const result = await withRetry(() => model.generateContent(prompt));
-    
+
     res.json({ question: result.response.text().trim() });
   } catch (error) {
     console.error("Question Error:", error.message);
-    res.status(500).json({ error: "Failed to generate question. Please try again later." });
+    res.status(500).json({ error: "Failed to generate question. Please try again." });
   }
 });
 
+// Feedback
 app.post("/api/feedback", async (req, res) => {
-  if (!model) return res.status(503).json({ error: "AI model still initializing" });
+  if (!model) return res.status(503).json({ error: "Model still initializing." });
 
   const { question, answer, type = "technical" } = req.body;
 
   if (!answer || answer.trim().length < 15) {
     return res.json({
       score: 20,
-      feedback: "Answer too short. Give a full, structured response in real interviews."
+      feedback: "Answer is too short. In real interviews, always provide a structured, detailed response."
     });
   }
 
   try {
-    const prompt = `You are a strict senior interview coach...`; // (keep your original prompt here)
+    const prompt = `You are a strict, honest senior engineering interviewer.
+
+Question: ${question}
+
+Answer: ${answer}
+
+Score this ${type} answer harshly (0-100) using this format exactly:
+
+SCORE: [number]
+FEEDBACK: [2-4 sentences of honest constructive feedback. Point out weaknesses clearly.]`;
 
     const result = await withRetry(() => model.generateContent(prompt));
     const text = result.response.text();
 
-    let score = 60;
-    let feedback = "Feedback parsing failed.";
+    let score = 55;
+    let feedback = "Could not parse feedback.";
 
     const scoreMatch = text.match(/SCORE:\s*(\d+)/i);
     if (scoreMatch) score = parseInt(scoreMatch[1]);
@@ -166,21 +214,24 @@ app.post("/api/feedback", async (req, res) => {
     const feedbackMatch = text.match(/FEEDBACK:\s*([\s\S]+)/i);
     if (feedbackMatch) feedback = feedbackMatch[1].trim();
 
-    res.json({ score: Math.min(100, Math.max(0, score)), feedback });
+    res.json({ 
+      score: Math.max(0, Math.min(100, score)), 
+      feedback 
+    });
   } catch (error) {
     console.error("Feedback Error:", error.message);
     res.status(500).json({ error: "Failed to generate feedback." });
   }
 });
 
-// Serve frontend
+// Serve React app (must be last)
 app.use(express.static(path.join(__dirname, "build")));
 app.get("/{*splat}", (req, res) => {
   res.sendFile(path.join(__dirname, "build", "index.html"));
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
 
 module.exports = app;
