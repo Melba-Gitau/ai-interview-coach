@@ -139,46 +139,48 @@ app.post("/api/question", async (req, res) => {
 });
 
 // Feedback
-// Feedback - Very Strict Version
 app.post("/api/feedback", async (req, res) => {
   const { question, answer, type = "technical" } = req.body;
 
-  const trimmedAnswer = answer ? answer.trim() : "";
+  const trimmedAnswer = (answer || "").trim();
 
-  if (!trimmedAnswer || trimmedAnswer.length < 20) {
+  if (!trimmedAnswer || trimmedAnswer.length < 25) {
     return res.json({
-      score: 8,
-      feedback: "Your answer is too short or empty. Responding with 'I don't know' or giving very minimal answers will fail most real interviews.",
+      score: 5,
+      feedback: "Extremely poor response. Refusing to answer or giving very short replies like 'No I won't' will immediately fail real interviews.",
       provider: currentProvider
     });
   }
 
   try {
-    const prompt = `You are an extremely strict FAANG-level senior interviewer. Do not be nice.
+    const prompt = `You are a **ruthless, no-nonsense FAANG senior engineer interviewer**. Be harsh and critical.
 
 Question: ${question}
 
-Candidate's Answer: ${trimmedAnswer}
+Candidate Answer: ${trimmedAnswer}
 
-Scoring (be brutal and honest):
-- 0-15: Terrible ("I don't know", refusal, completely wrong, or very short)
-- 16-35: Weak (vague, major gaps, poor reasoning)
-- 36-55: Below average
-- 56-70: Average / mediocre
-- 71-85: Good
-- 86-100: Excellent / outstanding
+Evaluate **very strictly**.
 
-"I don't know", "I'm not sure", or shallow answers must score **15 or below**.
+Key Rules:
+- Any refusal ("No", "I won't", "I don't want to", etc.) = maximum 10 points
+- "I don't know" or giving up = maximum 10 points
+- Vague, short, or low-effort answers = under 30
 
-Respond **exactly** in this format:
+Scoring:
+- 0-15: Terrible / refusal / very poor effort
+- 16-40: Weak
+- 41-65: Average
+- 66-100: Good to Excellent
+
+Respond in **exactly** this format:
 
 SCORE: [number]
-FEEDBACK: [2-4 short, direct sentences. Point out the main weaknesses clearly.]`;
+FEEDBACK: [2-4 direct sentences. Call out the refusal or weakness clearly.]`;
 
     const responseText = await callAI(prompt, "feedback");
 
     let score = 50;
-    let feedback = "Feedback parsing issue.";
+    let feedback = "Could not parse feedback.";
 
     const scoreMatch = responseText.match(/SCORE:\s*(\d+)/i);
     if (scoreMatch) score = parseInt(scoreMatch[1]);
