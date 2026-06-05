@@ -9,6 +9,7 @@ export default function Interview() {
   const [answer, setAnswer] = useState("");
   const [feedback, setFeedback] = useState("");
   const [question, setQuestion] = useState("");
+  const [score, setScore] = useState(0);
   const [questionLoading, setQuestionLoading] = useState(true);
   const [questionError, setQuestionError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -55,34 +56,6 @@ export default function Interview() {
     }
   }, [type]);
 
-  // const fetchQuestion = useCallback(async () => {
-  //   setQuestionLoading(true);
-  //   setQuestionError("");
-  //   setQuestion("");
-  //   try {
-  //     const res = await fetch(
-  //       "https://ai-interview-coach-production-7ac4.up.railway.app/api/question",
-  //       {
-  //         method: "POST",
-  //         headers: { "Content-Type": "application/json" },
-  //         body: JSON.stringify({ type }),
-  //       },
-  //     );
-  //     const data = await res.json();
-  //     if (!res.ok) {
-  //       throw new Error(data.error || "Failed to load question");
-  //     }
-  //     setQuestion(data.question);
-  //   } catch (error) {
-  //     console.error("Error fetching question:", error);
-  //     setQuestionError(
-  //       error.message ||
-  //         "Could not load question. Is the API server running on port 5000?",
-  //     );
-  //   } finally {
-  //     setQuestionLoading(false);
-  //   }
-  // }, [type]);
 
   // Fetch a new question when page loads
   useEffect(() => {
@@ -107,6 +80,7 @@ export default function Interview() {
       );
       const data = await res.json();
       setFeedback(data.feedback);
+      setScore(data.score || 70); 
 
       const newResponse = {
         id: Date.now(),
@@ -245,67 +219,74 @@ export default function Interview() {
   </div>
 
   {feedback ? (
-    <div className="space-y-6">
-      {/* Overall Score */}
-      <div>
-        <p className="text-4xl font-bold text-foreground mb-1">{Math.round(Math.random() * 30 + 50)}</p>
-        <p className="text-sm text-muted-foreground">/ 100 overall</p>
-      </div>
+  <div className="space-y-6">
+    {/* Overall Score */}
+    <div>
+      <p className="text-4xl font-bold text-foreground mb-1">{score}</p>
+      <p className="text-sm text-muted-foreground">/ 100 overall</p>
+    </div>
 
-      {/* Criteria Breakdown */}
-      <div className="space-y-4">
-        {feedbackCriteria[type]?.map((criterion, idx) => (
+    {/* Criteria Breakdown */}
+    <div className="space-y-4">
+      {feedbackCriteria[type]?.map((criterion) => {
+        const criteriaScore = Math.round((score / 100) * 10);
+        const progressWidth = (criteriaScore / 10) * 100;
+        
+        return (
           <div key={criterion}>
             <div className="flex justify-between items-center mb-2">
               <p className="text-sm font-semibold text-foreground">{criterion}</p>
-              <p className="text-sm font-bold text-primary">{Math.round(Math.random() * 5 + 3)}/10</p>
+              <p className="text-sm font-bold text-primary">{criteriaScore}/10</p>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div 
                 className="bg-primary h-2 rounded-full" 
-                style={{width: `${(Math.round(Math.random() * 5 + 3) / 10) * 100}%`}}
+                style={{width: `${progressWidth}%`}}
               ></div>
             </div>
             <p className="text-xs text-muted-foreground mt-2">
-              Quick tip for improvement
+              Keep improving on this area
             </p>
           </div>
-        ))}
-      </div>
-
-      {/* Try Next */}
-      <div className="bg-gray-50 border border-border rounded-lg p-4">
-        <p className="text-xs font-semibold text-foreground mb-2">TRY NEXT</p>
-        <p className="text-xs text-muted-foreground">
-          {feedback.substring(0, 100)}...
-        </p>
-      </div>
-
-      {/* Buttons */}
-      <div className="flex gap-3 pt-4">
-        <button
-          onClick={() => {
-            setAnswer("");
-            setFeedback("");
-            fetchQuestion();
-          }}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-border hover:bg-gray-50 text-sm font-semibold transition"
-        >
-          <Save className="w-3.5 h-3.5" />Save session
-        </button>
-        <button
-          onClick={() => {
-            setAnswer("");
-            setFeedback("");
-            fetchQuestion();
-          }}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-foreground hover:bg-gray-800 text-white text-sm font-semibold transition"
-        >
-          Next question →
-        </button>
-      </div>
+        );
+      })}
     </div>
-  ) : (
+
+    {/* Try Next */}
+    <div className="bg-gray-50 border border-border rounded-lg p-4">
+      <p className="text-xs font-semibold text-foreground mb-2">TRY NEXT</p>
+      <p className="text-xs text-muted-foreground">
+        {feedback.substring(0, 100)}...
+      </p>
+    </div>
+
+    {/* Buttons */}
+    <div className="flex gap-3 pt-4">
+      <button
+        onClick={() => {
+          setAnswer("");
+          setFeedback("");
+          setScore(0);
+          fetchQuestion();
+        }}
+        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-border hover:bg-gray-50 text-sm font-semibold transition"
+      >
+        Save session
+      </button>
+      <button
+        onClick={() => {
+          setAnswer("");
+          setFeedback("");
+          setScore(0);
+          fetchQuestion();
+        }}
+        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-foreground hover:bg-gray-800 text-white text-sm font-semibold transition"
+      >
+        Next question →
+      </button>
+    </div>
+  </div>
+) : (
     <div>
       <p className="text-xs text-muted-foreground mb-3">
         Feedback will appear here.
