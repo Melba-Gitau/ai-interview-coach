@@ -140,44 +140,33 @@ app.post("/api/question", async (req, res) => {
 
 // Feedback
 app.post("/api/feedback", async (req, res) => {
+  if (!model) return res.status(503).json({ error: "AI model still initializing" });
+
   const { question, answer, type = "technical" } = req.body;
 
   if (!answer || answer.trim().length < 15) {
     return res.json({
       score: 20,
-      feedback: "Answer too short. Provide a structured response in real interviews.",
-      provider: "system"
+      feedback: "Answer too short. Give a full, structured response in real interviews."
     });
   }
 
   try {
-    const prompt = `You are a strict senior interview coach.
+    const prompt = `You are a strict senior interview coach...`; // (keep your original prompt here)
 
-Question: ${question}
-
-Answer: ${answer}
-
-Score this ${type} answer and respond exactly in this format:
-
-SCORE: [number 0-100]
-FEEDBACK: [2-4 sentences of honest, constructive feedback]`;
-
-    const responseText = await callAI(prompt, "feedback");
+    const result = await withRetry(() => model.generateContent(prompt));
+    const text = result.response.text();
 
     let score = 60;
-    let feedback = "Could not parse feedback.";
+    let feedback = "Feedback parsing failed.";
 
-    const scoreMatch = responseText.match(/SCORE:\s*(\d+)/i);
+    const scoreMatch = text.match(/SCORE:\s*(\d+)/i);
     if (scoreMatch) score = parseInt(scoreMatch[1]);
 
-    const feedbackMatch = responseText.match(/FEEDBACK:\s*([\s\S]+)/i);
+    const feedbackMatch = text.match(/FEEDBACK:\s*([\s\S]+)/i);
     if (feedbackMatch) feedback = feedbackMatch[1].trim();
 
-    res.json({ 
-      score: Math.max(0, Math.min(100, score)), 
-      feedback,
-      provider: currentProvider 
-    });
+    res.json({ score: Math.min(100, Math.max(0, score)), feedback });
   } catch (error) {
     console.error("Feedback Error:", error.message);
     res.status(500).json({ error: "Failed to generate feedback." });
