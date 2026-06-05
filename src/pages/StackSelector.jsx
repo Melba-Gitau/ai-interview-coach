@@ -19,7 +19,7 @@ export default function StackSelector() {
       title: "Start Mock Interview",
       desc: "Technical, behavioral, or system design. One question, then feedback.",
       featured: true,
-      link: "/interview/technical", 
+      link: "/interview/technical",
     },
     {
       id: "behavioral",
@@ -28,7 +28,7 @@ export default function StackSelector() {
       title: "Behavioral Practice",
       desc: "Sharpen STAR answers for the questions that always come up.",
       featured: false,
-      link: "/interview/chat/behavioral", 
+      link: "/interview/chat/behavioral",
     },
     {
       id: "technical",
@@ -37,7 +37,7 @@ export default function StackSelector() {
       title: "Technical Thought Practice",
       desc: "Think out loud — get scored on clarity, structure, and reasoning.",
       featured: false,
-      link: "/interview/chat/technical", 
+      link: "/interview/chat/technical",
     },
     {
       id: "saved",

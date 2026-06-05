@@ -34,7 +34,7 @@ export function Navbar() {
             Dashboard
           </Link>
           <Link to="/responses" className="hover:text-primary transition">
-           My Responses
+            My Responses
           </Link>
         </nav>
 
