@@ -180,7 +180,7 @@ export default function Interview() {
                 value={answer}
                 onChange={(e) => setAnswer(e.target.value)}
                 placeholder="Think out loud. Start with constraints, structure your answer, name the trade-offs..."
-                className="w-full h-64 bg-gray-50 border border-border rounded-lg p-2 text-xs resize-none focus:outline-none focus:border-primary"
+                className="w-full h-40 md:h-64 bg-gray-50 border border-border rounded-lg p-2 text-xs resize-none focus:outline-none focus:border-primary"
               />
 
               {/* Word Count & Buttons */}
@@ -211,8 +211,6 @@ export default function Interview() {
             </div>
           </div>
 
-          {/* Right Column - Feedback */}
-          {/* Right Column - Feedback */}
           {/* Right Column - Feedback */}
           <div
             className={`rounded-xl border p-6 ${feedback ? "border-blue-200" : "border-border bg-card"}`}
