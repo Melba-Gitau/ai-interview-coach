@@ -125,7 +125,7 @@ export default function Responses() {
                           {session.date.toUpperCase()}
                         </span>
                       </div>
-                      <h3 className="text-sm font-semibold text-foreground truncate">
+                      <h3 className="text-sm font-semibold text-foreground line-clamp-2">
                         {session.question}
                       </h3>
                     </div>
