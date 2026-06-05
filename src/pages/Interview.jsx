@@ -222,6 +222,10 @@ export default function Interview() {
 
   {feedback ? (
   <div className="space-y-6">
+    <div>
+      <p className="text-4xl font-bold text-foreground mb-1">{score}</p>
+      <p className="text-sm text-muted-foreground">/ 100 overall</p>
+    </div>
     {/* Criteria Breakdown */}
     <div className="space-y-4">
       {feedbackCriteria[type]?.map((criterion) => {
@@ -294,12 +298,6 @@ export default function Interview() {
       >
         Save session
       </button>
-      <Link
-        to={`/response/${window.currentSessionId || Date.now()}`}
-        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-border hover:bg-gray-50 text-sm font-semibold transition text-center"
-      >
-        See overall score →
-      </Link>
       <button
         onClick={() => {
           setAnswer("");
