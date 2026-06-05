@@ -2,101 +2,99 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 const dotenv = require("dotenv");
+
+const { Groq } = require("groq-sdk");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 dotenv.config();
 
 const app = express();
-
 app.use(cors({ origin: "*" }));
 app.use(express.json());
 
 const PORT = process.env.PORT || 8080;
 
-if (!process.env.GOOGLE_API_KEY) {
-  console.error("❌ GOOGLE_API_KEY missing!");
-} else {
-  console.log("✅ GOOGLE_API_KEY loaded");
-}
-
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY?.trim());
+console.log("✅ GROQ_API_KEY loaded:", !!process.env.GROQ_API_KEY);
+console.log("✅ GOOGLE_API_KEY loaded:", !!process.env.GOOGLE_API_KEY);
 
 // ======================
-// Retry with longer backoff for 429
+// Initialize Clients
 // ======================
-async function withRetry(fn, maxRetries = 4) {
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+const groq = process.env.GROQ_API_KEY 
+  ? new Groq({ apiKey: process.env.GROQ_API_KEY }) 
+  : null;
+
+const genAI = process.env.GOOGLE_API_KEY 
+  ? new GoogleGenerativeAI(process.env.GOOGLE_API_KEY?.trim()) 
+  : null;
+
+let currentProvider = null; // "groq" or "gemini"
+
+// ======================
+// Unified AI Call Function
+// ======================
+async function callAI(prompt, type = "question") {
+  // Try Groq first (faster + better free limits)
+  if (groq) {
     try {
-      return await fn();
-    } catch (error) {
-      if (error.message?.includes("429")) {
-        const delay = attempt * 3000; // 3s, 6s, 9s...
-        console.warn(`⚠️ 429 Rate Limit - waiting ${delay/1000}s before retry ${attempt}/${maxRetries}`);
-        await new Promise(r => setTimeout(r, delay));
-      } else {
-        throw error;
-      }
-    }
-  }
-  throw new Error("Max retries exceeded");
-}
-
-let model = null;
-
-async function initializeModel() {
-  // Try the best model first, then fallbacks
-  const modelList = [
-    'gemini-1.5-flash',      // ✅ Exists & works
-  'gemini-1.5-pro',        // ✅ Exists but slower
-  'gemini-pro' 
-  ];
-
-  for (const modelName of modelList) {
-    try {
-      console.log(`Trying model: ${modelName}`);
-      const tempModel = genAI.getGenerativeModel({
-        model: modelName,
-        generationConfig: { temperature: 0.7, maxOutputTokens: 2048 }
+      const completion = await groq.chat.completions.create({
+        messages: [{ role: "user", content: prompt }],
+        model: "llama-3.3-70b-versatile",     // Excellent balance
+        temperature: type === "feedback" ? 0.6 : 0.8,
+        max_tokens: type === "feedback" ? 800 : 600,
       });
 
-      await tempModel.generateContent("Say OK");
-      console.log(`🚀 SUCCESS: Using ${modelName}`);
-      return tempModel;
+      currentProvider = "groq";
+      return completion.choices[0].message.content.trim();
     } catch (err) {
-      console.warn(`⚠️ ${modelName} failed: ${err.message.substring(0, 100)}...`);
-      if (err.message.includes("429")) {
-        console.log("⏳ Quota hit. Waiting 10 seconds before next model...");
-        await new Promise(r => setTimeout(r, 10000));
-      }
+      console.warn("⚠️ Groq failed, trying Gemini fallback...", err.message?.substring(0, 100));
     }
   }
-  throw new Error("All models failed - quota or key issue.");
-}
 
-// Initialize
-initializeModel()
-  .then(m => { model = m; console.log("✅ Model ready!"); })
-  .catch(err => console.error("❌", err.message));
+  // Fallback to Gemini
+  if (genAI) {
+    try {
+      const model = genAI.getGenerativeModel({ 
+        model: "gemini-3.5-flash",
+        generationConfig: { temperature: type === "feedback" ? 0.6 : 0.8, maxOutputTokens: 2048 }
+      });
+
+      const result = await model.generateContent(prompt);
+      currentProvider = "gemini";
+      return result.response.text().trim();
+    } catch (err) {
+      console.error("❌ Gemini also failed:", err.message);
+      throw err;
+    }
+  }
+
+  throw new Error("No AI provider available");
+}
 
 // ======================
 // Routes
 // ======================
-app.get("/api/health", (req, res) => res.json({ status: "ok", modelReady: !!model }));
 
-app.get("/api/test-model", async (req, res) => {
-  if (!model) return res.status(503).json({ error: "Model not ready. Wait or check quota." });
+app.get("/api/health", (req, res) => {
+  res.json({ 
+    status: "ok", 
+    provider: currentProvider || "none",
+    groqReady: !!groq,
+    geminiReady: !!genAI 
+  });
+});
+
+app.get("/api/test-ai", async (req, res) => {
   try {
-    const result = await withRetry(() => model.generateContent("Hello"));
-    res.json({ success: true, response: result.response.text().trim() });
+    const text = await callAI("Say hello in one short sentence.");
+    res.json({ success: true, provider: currentProvider, response: text });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
 
-
+// Generate Question
 app.post("/api/question", async (req, res) => {
-  if (!model) return res.status(503).json({ error: "Model is not ready" });
-
   const { type } = req.body;
 
   const prompts = {
@@ -132,63 +130,69 @@ app.post("/api/question", async (req, res) => {
 
   try {
     const prompt = prompts[type] || prompts.technical;
-
-    const result = await withRetry(() => model.generateContent(prompt));
-    
-    res.json({ question: result.response.text().trim() });
+    const question = await callAI(prompt, "question");
+    res.json({ question, provider: currentProvider });
   } catch (error) {
     console.error("Question Error:", error.message);
-    res.status(500).json({ error: "Failed to generate question. Please try again later." });
+    res.status(500).json({ error: "Failed to generate question. Please try again." });
   }
 });
 
-
+// Feedback
 app.post("/api/feedback", async (req, res) => {
-  if (!model) return res.status(503).json({ error: "Model is not ready" });
-
   const { question, answer, type = "technical" } = req.body;
 
   if (!answer || answer.trim().length < 15) {
     return res.json({
       score: 20,
-      feedback: "Answer too short. Give a full, structured response in real interviews."
+      feedback: "Answer too short. Provide a structured response in real interviews.",
+      provider: "system"
     });
   }
 
   try {
-    const prompt = `You are a strict senior interview coach...`; // (keep your original prompt here)
+    const prompt = `You are a strict senior interview coach.
 
-    const result = await withRetry(() => model.generateContent(prompt));
-    const text = result.response.text();
+Question: ${question}
+
+Answer: ${answer}
+
+Score this ${type} answer and respond exactly in this format:
+
+SCORE: [number 0-100]
+FEEDBACK: [2-4 sentences of honest, constructive feedback]`;
+
+    const responseText = await callAI(prompt, "feedback");
 
     let score = 60;
-    let feedback = "Feedback parsing failed.";
+    let feedback = "Could not parse feedback.";
 
-    const scoreMatch = text.match(/SCORE:\s*(\d+)/i);
+    const scoreMatch = responseText.match(/SCORE:\s*(\d+)/i);
     if (scoreMatch) score = parseInt(scoreMatch[1]);
 
-    const feedbackMatch = text.match(/FEEDBACK:\s*([\s\S]+)/i);
+    const feedbackMatch = responseText.match(/FEEDBACK:\s*([\s\S]+)/i);
     if (feedbackMatch) feedback = feedbackMatch[1].trim();
 
-    res.json({ score: Math.min(100, Math.max(0, score)), feedback });
+    res.json({ 
+      score: Math.max(0, Math.min(100, score)), 
+      feedback,
+      provider: currentProvider 
+    });
   } catch (error) {
     console.error("Feedback Error:", error.message);
     res.status(500).json({ error: "Failed to generate feedback." });
   }
 });
 
-// Serve frontend
+// Serve React frontend
 app.use(express.static(path.join(__dirname, "build")));
-app.get("/{*splat}", (req, res) => {
+app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "build", "index.html"));
 });
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📡 Groq + Gemini dual mode active`);
 });
 
 module.exports = app;
-
-
-
-
