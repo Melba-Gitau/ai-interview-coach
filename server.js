@@ -3,7 +3,6 @@ const cors = require("cors");
 const path = require("path");
 const dotenv = require("dotenv");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-const fetch = require("node-fetch"); // Add this: npm install node-fetch
 
 dotenv.config();
 
@@ -15,7 +14,7 @@ app.use(express.json());
 const PORT = process.env.PORT || 8080;
 
 if (!process.env.GOOGLE_API_KEY) {
-  console.error("❌ GOOGLE_API_KEY missing in .env");
+  console.error("❌ GOOGLE_API_KEY missing!");
 } else {
   console.log("✅ GOOGLE_API_KEY loaded");
 }
@@ -23,104 +22,80 @@ if (!process.env.GOOGLE_API_KEY) {
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY?.trim());
 
 // ======================
-// List Available Models (Diagnostic)
+// Retry with longer backoff for 429
 // ======================
-async function listAvailableModels() {
-  try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${process.env.GOOGLE_API_KEY}`;
-    const response = await fetch(url);
-    const data = await response.json();
-    console.log("📋 Available Models:", data.models?.map(m => m.name) || data);
-    return data;
-  } catch (e) {
-    console.error("Failed to list models:", e.message);
-  }
-}
-
-// Run once on startup
-listAvailableModels();
-
-// ======================
-// Retry + Model Init
-// ======================
-async function withRetry(fn, maxRetries = 3) {
+async function withRetry(fn, maxRetries = 4) {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       return await fn();
     } catch (error) {
-      if ((error.message?.includes("503") || error.message?.includes("high demand")) && attempt < maxRetries) {
-        const delay = attempt * 2000;
-        console.warn(`⚠️ Overloaded - retrying in ${delay}ms...`);
+      if (error.message?.includes("429")) {
+        const delay = attempt * 3000; // 3s, 6s, 9s...
+        console.warn(`⚠️ 429 Rate Limit - waiting ${delay/1000}s before retry ${attempt}/${maxRetries}`);
         await new Promise(r => setTimeout(r, delay));
       } else {
         throw error;
       }
     }
   }
+  throw new Error("Max retries exceeded");
 }
 
 let model = null;
 
 async function initializeModel() {
+  // Try the best model first, then fallbacks
   const modelList = [
-    "gemini-3.5-flash",        // ← Current best (as of June 2026)
+    "gemini-3.5-flash",       // Primary (recommended)
     "gemini-3.1-flash-lite",
-    "gemini-3-flash-preview",
     "gemini-flash-latest"
   ];
 
   for (const modelName of modelList) {
     try {
-      console.log(`Trying: ${modelName}`);
-      const tempModel = genAI.getGenerativeModel({ 
+      console.log(`Trying model: ${modelName}`);
+      const tempModel = genAI.getGenerativeModel({
         model: modelName,
         generationConfig: { temperature: 0.7, maxOutputTokens: 2048 }
       });
 
-      await tempModel.generateContent("Say OK only");
+      await tempModel.generateContent("Say OK");
       console.log(`🚀 SUCCESS: Using ${modelName}`);
       return tempModel;
     } catch (err) {
-      console.warn(`⚠️ ${modelName} failed: ${err.message.substring(0, 150)}`);
+      console.warn(`⚠️ ${modelName} failed: ${err.message.substring(0, 100)}...`);
+      if (err.message.includes("429")) {
+        console.log("⏳ Quota hit. Waiting 10 seconds before next model...");
+        await new Promise(r => setTimeout(r, 10000));
+      }
     }
   }
-  throw new Error("All models failed.");
+  throw new Error("All models failed - quota or key issue.");
 }
 
+// Initialize
 initializeModel()
-  .then(m => {
-    model = m;
-    console.log("✅ Model ready!");
-  })
-  .catch(err => {
-    console.error("❌", err.message);
-  });
+  .then(m => { model = m; console.log("✅ Model ready!"); })
+  .catch(err => console.error("❌", err.message));
 
 // ======================
 // Routes
 // ======================
-
-app.get("/api/health", (req, res) => {
-  res.json({ status: "ok", modelReady: !!model });
-});
+app.get("/api/health", (req, res) => res.json({ status: "ok", modelReady: !!model }));
 
 app.get("/api/test-model", async (req, res) => {
-  if (!model) return res.status(503).json({ error: "Model not ready" });
+  if (!model) return res.status(503).json({ error: "Model not ready. Wait or check quota." });
   try {
-    const result = await model.generateContent("Hello, respond with one word.");
-    res.json({ success: true, response: result.response.text() });
+    const result = await withRetry(() => model.generateContent("Hello"));
+    res.json({ success: true, response: result.response.text().trim() });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
 
-app.get("/api/models", async (req, res) => {
-  const data = await listAvailableModels();
-  res.json(data);
-});
 
 app.post("/api/question", async (req, res) => {
-  if (!model) return res.status(503).json({ error: "AI model still initializing" });
+  if (!model) return res.status(503).json({ error: "Model is not ready" });
 
   const { type } = req.body;
 
@@ -169,7 +144,7 @@ app.post("/api/question", async (req, res) => {
 
 
 app.post("/api/feedback", async (req, res) => {
-  if (!model) return res.status(503).json({ error: "AI model still initializing" });
+  if (!model) return res.status(503).json({ error: "Model is not ready" });
 
   const { question, answer, type = "technical" } = req.body;
 
@@ -213,3 +188,7 @@ app.listen(PORT, () => {
 });
 
 module.exports = app;
+
+
+
+
