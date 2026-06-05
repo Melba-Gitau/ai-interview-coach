@@ -139,34 +139,59 @@ app.post("/api/question", async (req, res) => {
 });
 
 // Feedback
+// Feedback - Very Strict Version
 app.post("/api/feedback", async (req, res) => {
-  if (!model) return res.status(503).json({ error: "AI model still initializing" });
-
   const { question, answer, type = "technical" } = req.body;
 
-  if (!answer || answer.trim().length < 15) {
+  const trimmedAnswer = answer ? answer.trim() : "";
+
+  if (!trimmedAnswer || trimmedAnswer.length < 20) {
     return res.json({
-      score: 20,
-      feedback: "Answer too short. Give a full, structured response in real interviews."
+      score: 8,
+      feedback: "Your answer is too short or empty. Responding with 'I don't know' or giving very minimal answers will fail most real interviews.",
+      provider: currentProvider
     });
   }
 
   try {
-    const prompt = `You are a strict senior interview coach...`; // (keep your original prompt here)
+    const prompt = `You are an extremely strict FAANG-level senior interviewer. Do not be nice.
 
-    const result = await withRetry(() => model.generateContent(prompt));
-    const text = result.response.text();
+Question: ${question}
 
-    let score = 60;
-    let feedback = "Feedback parsing failed.";
+Candidate's Answer: ${trimmedAnswer}
 
-    const scoreMatch = text.match(/SCORE:\s*(\d+)/i);
+Scoring (be brutal and honest):
+- 0-15: Terrible ("I don't know", refusal, completely wrong, or very short)
+- 16-35: Weak (vague, major gaps, poor reasoning)
+- 36-55: Below average
+- 56-70: Average / mediocre
+- 71-85: Good
+- 86-100: Excellent / outstanding
+
+"I don't know", "I'm not sure", or shallow answers must score **15 or below**.
+
+Respond **exactly** in this format:
+
+SCORE: [number]
+FEEDBACK: [2-4 short, direct sentences. Point out the main weaknesses clearly.]`;
+
+    const responseText = await callAI(prompt, "feedback");
+
+    let score = 50;
+    let feedback = "Feedback parsing issue.";
+
+    const scoreMatch = responseText.match(/SCORE:\s*(\d+)/i);
     if (scoreMatch) score = parseInt(scoreMatch[1]);
 
-    const feedbackMatch = text.match(/FEEDBACK:\s*([\s\S]+)/i);
+    const feedbackMatch = responseText.match(/FEEDBACK:\s*([\s\S]+)/i);
     if (feedbackMatch) feedback = feedbackMatch[1].trim();
 
-    res.json({ score: Math.min(100, Math.max(0, score)), feedback });
+    res.json({ 
+      score: Math.max(0, Math.min(100, score)), 
+      feedback,
+      provider: currentProvider 
+    });
+
   } catch (error) {
     console.error("Feedback Error:", error.message);
     res.status(500).json({ error: "Failed to generate feedback." });
