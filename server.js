@@ -186,7 +186,7 @@ FEEDBACK: [2-4 sentences of honest, constructive feedback]`;
 
 // Serve React frontend
 app.use(express.static(path.join(__dirname, "build")));
-app.get("*", (req, res) => {
+app.get("/{*splat}", (req, res) => {
   res.sendFile(path.join(__dirname, "build", "index.html"));
 });
 
