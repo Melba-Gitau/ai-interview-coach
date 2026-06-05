@@ -8,7 +8,6 @@ export default function Interview() {
   const { type } = useParams();
   const [answer, setAnswer] = useState("");
   const [feedback, setFeedback] = useState("");
-  const [criteria, setCriteria] = useState({});
   const [question, setQuestion] = useState("");
   const [score, setScore] = useState(0);
   const [questionLoading, setQuestionLoading] = useState(true);
@@ -82,7 +81,8 @@ export default function Interview() {
       const data = await res.json();
       setFeedback(data.feedback);
       setScore(data.score || 70); 
-      setCriteria(data.criteria || {});
+
+      const sessionId = Date.now();
 
       const newResponse = {
         id: Date.now(),
@@ -219,96 +219,97 @@ export default function Interview() {
       AI FEEDBACK
     </p>
   </div>
+
   {feedback ? (
-  <div className="space-y-8">
-    {/* Overall Score */}
-    <div className="text-center">
-      <p className="text-6xl font-bold text-foreground mb-1">{score}</p>
-      <p className="text-sm text-muted-foreground">/ 100 Overall Score</p>
-      
-      <div className="mt-6 w-40 h-3 bg-gray-200 rounded-full mx-auto overflow-hidden">
-        <div 
-          className="h-3 rounded-full transition-all duration-700"
-          style={{ 
-            width: `${score}%`,
-            background: score >= 80 
-              ? 'linear-gradient(to right, #22c55e, #86efac)' 
-              : score >= 60 
-                ? 'linear-gradient(to right, #eab308, #fde047)' 
-                : 'linear-gradient(to right, #ef4444, #f87171)'
-          }}
-        />
-      </div>
-    </div>
+  <div className="space-y-6">
+    {/* Criteria Breakdown */}
+    <div className="space-y-4">
+      {feedbackCriteria[type]?.map((criterion) => {
+        const criteriaScore = Math.max(1, Math.round((score / 100) * 10));
+        const progressWidth = (criteriaScore / 10) * 100;
 
-    {/* Dynamic Criteria Breakdown */}
-    <div className="space-y-6">
-      <h3 className="text-lg font-semibold text-foreground">Performance Breakdown</h3>
-      
-      {criteria && Object.keys(criteria).length > 0 ? (
-        Object.entries(criteria).map(([key, value]) => {
-          const percentage = Math.round((value / 10) * 100);
-          return (
-            <div key={key} className="space-y-3">
-              <div className="flex justify-between items-center">
-                <p className="font-medium capitalize text-foreground">
-                  {key.replace(/([A-Z])/g, ' $1')}
-                </p>
-                <p className="font-semibold text-primary">{value}/10</p>
-              </div>
-              
-              <div className="w-full bg-gray-200 rounded-full h-3">
-                <div 
-                  className="h-3 rounded-full transition-all duration-700"
-                  style={{ 
-                    width: `${percentage}%`,
-                    backgroundColor: value >= 8 ? '#22c55e' : value >= 6 ? '#eab308' : '#ef4444'
-                  }}
-                />
-              </div>
+        // Generic tips for each criterion
+        const tipsByType = {
+          technical: {
+            "Clarity": "Add a sentence to frame the problem before diving in.",
+            "Structure": "Try a 3-beat structure: context → approach → trade-offs.",
+            "Technical reasoning": "Tie your story to a measurable outcome.",
+            "Communication": "Slow down on the punchline — it lands harder.",
+          },
+          behavioral: {
+            "Clarity": "Be specific about what happened, not vague descriptions.",
+            "Structure": "Use STAR: Situation → Task → Action → Result.",
+            "Specific example": "Include concrete details and numbers.",
+            "Learnings": "Explain what you learned and how you'd handle it next time.",
+          },
+          "system-design": {
+            "Requirements": "Clarify constraints before jumping to solutions.",
+            "Architecture": "Explain your architecture decisions clearly.",
+            "Trade-offs": "Discuss trade-offs and why you chose this approach.",
+            "Scalability": "Consider how your system scales with growth.",
+          },
+        };
+
+        const tips = tipsByType[type] || {};
+        const tip = tips[criterion] || "Keep improving on this area.";
+        
+        return (
+          <div key={criterion}>
+            <div className="flex justify-between items-center mb-2">
+              <p className="text-sm font-semibold text-foreground">{criterion}</p>
+              <p className="text-sm font-bold text-primary">{criteriaScore}/10</p>
             </div>
-          );
-        })
-      ) : (
-        // Fallback if no criteria returned
-        <p className="text-muted-foreground text-sm">No detailed breakdown available.</p>
-      )}
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className="bg-primary h-2 rounded-full" 
+                style={{width: `${progressWidth}%`}}
+              ></div>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              {tip}
+            </p>
+          </div>
+        );
+      })}
     </div>
 
-    {/* Detailed Coach Feedback */}
-    <div className="bg-card border border-border rounded-2xl p-6">
-      <p className="font-semibold text-foreground mb-3">Coach Feedback</p>
-      <p className="text-sm leading-relaxed text-foreground whitespace-pre-line">
-        {feedback}
+    {/* Try Next */}
+    <div className="bg-gray-50 border border-border rounded-lg p-4">
+      <p className="text-xs font-semibold text-foreground mb-2">TRY NEXT</p>
+      <p className="text-xs text-muted-foreground">
+        {feedback.substring(0, 100)}...
       </p>
     </div>
 
-    {/* Action Buttons */}
-    <div className="flex gap-3 pt-6">
+    {/* Buttons */}
+    <div className="flex gap-3 pt-4">
       <button
         onClick={() => {
           setAnswer("");
           setFeedback("");
           setScore(0);
-          setCriteria({});
           fetchQuestion();
         }}
-        className="flex-1 py-3.5 px-6 rounded-2xl border border-border hover:bg-gray-50 font-medium transition"
+        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-border hover:bg-gray-50 text-sm font-semibold transition"
       >
-        Try Another Question
+        Save session
       </button>
-      
+      <Link
+        to={`/response/${window.currentSessionId || Date.now()}`}
+        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-border hover:bg-gray-50 text-sm font-semibold transition text-center"
+      >
+        See overall score →
+      </Link>
       <button
         onClick={() => {
           setAnswer("");
           setFeedback("");
           setScore(0);
-          setCriteria({});
           fetchQuestion();
         }}
-        className="flex-1 py-3.5 px-6 rounded-2xl bg-foreground text-white font-semibold hover:bg-gray-800 transition"
+        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-foreground hover:bg-gray-800 text-white text-sm font-semibold transition"
       >
-        Next Question →
+        Next question →
       </button>
     </div>
   </div>

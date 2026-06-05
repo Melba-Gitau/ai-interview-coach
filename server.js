@@ -139,94 +139,59 @@ app.post("/api/question", async (req, res) => {
 });
 
 // Feedback
-// Feedback - Structured Scoring (Best Version)
 app.post("/api/feedback", async (req, res) => {
   const { question, answer, type = "technical" } = req.body;
 
   const trimmedAnswer = (answer || "").trim();
 
-  if (!trimmedAnswer || trimmedAnswer.length < 20) {
+  if (!trimmedAnswer || trimmedAnswer.length < 25) {
     return res.json({
-      score: 8,
-      feedback: "Very poor effort. Short or refusing answers are not acceptable in real interviews.",
-      criteria: {
-        understanding: 1,
-        approach: 1,
-        depth: 1,
-        communication: 1
-      },
+      score: 5,
+      feedback: "Extremely poor response. Refusing to answer or giving very short replies like 'No I won't' will immediately fail real interviews.",
       provider: currentProvider
     });
   }
 
   try {
-    const prompt = `You are a strict FAANG senior interviewer.
+    const prompt = `You are a **ruthless, no-nonsense FAANG senior engineer interviewer**. Be harsh and critical.
 
 Question: ${question}
 
-Answer: ${trimmedAnswer}
+Candidate Answer: ${trimmedAnswer}
 
-Evaluate this ${type} answer and return a **structured JSON** response.
+Evaluate **very strictly**.
 
-Scoring criteria (0-10 for each):
+Key Rules:
+- Any refusal ("No", "I won't", "I don't want to", etc.) = maximum 10 points
+- "I don't know" or giving up = maximum 10 points
+- Vague, short, or low-effort answers = under 30
 
-${type === "technical" ? 
-`{
-  "understanding": "How well they understood the problem",
-  "approach": "Quality of solution approach",
-  "depth": "Technical depth and edge cases",
-  "communication": "Clarity and structure of explanation"
-}` : type === "behavioral" ? 
-`{
-  "situation": "Clear STAR structure (Situation & Task)",
-  "action": "Specific actions taken",
-  "result": "Measurable results & lessons learned",
-  "communication": "Storytelling quality"
-}` : 
-`{
-  "requirements": "Understanding requirements & constraints",
-  "architecture": "High-level design quality",
-  "scalability": "Scalability, reliability, trade-offs",
-  "communication": "Clarity of explanation"
-}`}
+Scoring:
+- 0-15: Terrible / refusal / very poor effort
+- 16-40: Weak
+- 41-65: Average
+- 66-100: Good to Excellent
 
-Be strict.
+Respond in **exactly** this format:
 
-Respond with **valid JSON only** in this exact format:
-
-{
-  "overallScore": 65,
-  "feedback": "2-4 sentences of honest feedback...",
-  "criteria": {
-    "understanding": 7,
-    "approach": 6,
-    ...
-  }
-}`;
+SCORE: [number]
+FEEDBACK: [2-4 direct sentences. Call out the refusal or weakness clearly.]`;
 
     const responseText = await callAI(prompt, "feedback");
 
-    // Parse JSON from AI response
-    let parsed;
-    try {
-      // Extract JSON if AI added extra text
-      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-      const jsonString = jsonMatch ? jsonMatch[0] : responseText;
-      parsed = JSON.parse(jsonString);
-    } catch (e) {
-      // Fallback if parsing fails
-      parsed = {
-        overallScore: 50,
-        feedback: responseText.substring(0, 300),
-        criteria: { understanding: 5, approach: 5, depth: 5, communication: 5 }
-      };
-    }
+    let score = 50;
+    let feedback = "Could not parse feedback.";
 
-    res.json({
-      score: Math.max(0, Math.min(100, parsed.overallScore || 50)),
-      feedback: parsed.feedback || "No feedback generated.",
-      criteria: parsed.criteria || {},
-      provider: currentProvider
+    const scoreMatch = responseText.match(/SCORE:\s*(\d+)/i);
+    if (scoreMatch) score = parseInt(scoreMatch[1]);
+
+    const feedbackMatch = responseText.match(/FEEDBACK:\s*([\s\S]+)/i);
+    if (feedbackMatch) feedback = feedbackMatch[1].trim();
+
+    res.json({ 
+      score: Math.max(0, Math.min(100, score)), 
+      feedback,
+      provider: currentProvider 
     });
 
   } catch (error) {
